@@ -67,13 +67,18 @@ export default function useSpeechRecognition({ onResult, onError, onEnd }) {
      * but only call onResult when isFinal is true.
      */
     recognition.onresult = (e) => {
-      const result = e.results[e.results.length - 1]
-      const transcript = result[0].transcript
-      console.log('[SR] onresult —', result.isFinal ? 'FINAL' : 'interim', transcript)
-      if (result.isFinal) {
-        recognition.stop() // manually stop — we got what we need
+      // Concatenate all results — with continuous mode, each pause creates a new result entry
+      // so the full sentence is spread across e.results, not just the last one.
+      let fullTranscript = ''
+      for (let i = 0; i < e.results.length; i++) {
+        fullTranscript += e.results[i][0].transcript
+      }
+      const isFinal = e.results[e.results.length - 1].isFinal
+      console.log('[SR] onresult —', isFinal ? 'FINAL' : 'interim', fullTranscript)
+      if (isFinal) {
+        recognition.stop()
         setIsListening(false)
-        onResult(transcript)
+        onResult(fullTranscript.trim())
       }
     }
 

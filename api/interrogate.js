@@ -1,22 +1,25 @@
 /**
- * /api/interrogate — Vercel serverless function: secure proxy to the Gemini API.
+ * /api/interrogate — Vercel serverless function: secure proxy to the Groq API.
  *
  * This function is the "brain" of Viktor Drago. It receives the player's latest
  * message and the full conversation history, attaches the Viktor Drago system prompt,
- * and sends everything to Gemini 2.0 Flash. Gemini returns Viktor's next response,
- * always prefixed with an emotion tag ([CALM], [NERVOUS], etc.).
+ * and sends everything to Groq (llama-3.3-70b-versatile). Groq returns Viktor's next
+ * response, always prefixed with an emotion tag ([CALM], [NERVOUS], etc.).
  *
- * Why a serverless function instead of calling Gemini directly from the frontend?
- *   - The GEMINI_API_KEY must never be exposed in client-side code.
+ * Why Groq over Gemini?
+ *   - Gemini free tier: 20 requests/day. Groq free tier: 14,400 requests/day.
+ *   - Groq inference is significantly faster — better for real-time game feel.
+ *   - Groq uses an OpenAI-compatible API — simpler request/response format.
+ *
+ * Why a serverless function instead of calling Groq directly from the frontend?
+ *   - The GROQ_API_KEY must never be exposed in client-side code.
  *   - The system prompt (Viktor's persona and rules) is also kept server-side,
  *     making it harder for players to read or manipulate Viktor's instructions.
  *
  * Request body (JSON):
  *   message  {string}   — the player's transcribed speech for this turn
- *   history  {Array}    — Gemini-formatted conversation history: array of
- *                         { role: 'user'|'model', parts: [{ text: string }] }
- *                         The full history is sent every call because Gemini has
- *                         no session memory between requests.
+ *   history  {Array}    — conversation history: array of { role: 'user'|'model', parts: [{ text }] }
+ *                         The full history is sent every call because Groq has no session memory.
  *
  * Response body (JSON):
  *   text {string} — Viktor's response, always starting with an emotion tag,
@@ -25,13 +28,13 @@
  * Error responses:
  *   405 — method was not POST
  *   400 — message field was missing or empty
- *   Gemini's status code — if the upstream Gemini call itself fails
+ *   Groq's status code — if the upstream call itself fails
  */
 
 /**
  * Viktor Drago's system prompt — his identity, motivation, and behavioural rules.
  *
- * This is injected as Gemini's system_instruction on every call. It defines:
+ * This is injected as the system message on every call. It defines:
  *   - Who Viktor is and what he did (guilty of selling classified documents)
  *   - The response format constraint (1-3 sentences, always prefixed with emotion tag)
  *   - The escalation arc: CALM → NERVOUS → SILENT → CRACKING
@@ -74,53 +77,45 @@ Rules:
  * Vercel calls this function for every POST to /api/interrogate. The function:
  *   1. Validates the HTTP method (POST only)
  *   2. Extracts and validates the request body
- *   3. Assembles the full conversation context (history + new user message)
- *   4. Calls the Gemini generateContent API
- *   5. Extracts the text from Gemini's nested response structure
+ *   3. Converts the Gemini-format history to OpenAI-compatible messages
+ *   4. Calls the Groq chat completions endpoint
+ *   5. Extracts the text from the response
  *   6. Returns it as a simple { text } JSON object
  *
  * @param {object} req — Vercel/Node IncomingMessage with .method and .body
  * @param {object} res — Vercel/Node ServerResponse
  */
 export default async function handler(req, res) {
-  // Step 1: Reject any method that is not POST — this is a write endpoint
   if (req.method !== 'POST') return res.status(405).end()
 
-  // Step 2: Validate required fields — `message` is the player's current utterance;
-  // `history` defaults to [] so the first message in a session works without history
   const { message, history = [] } = req.body
   if (!message) return res.status(400).json({ error: 'Missing message' })
 
-  // Step 3: Build the contents array for Gemini.
-  // The history array already contains all previous turns in Gemini's expected format.
-  // We append the current player message as the final 'user' turn.
-  const contents = [
-    ...history,
-    { role: 'user', parts: [{ text: message }] },
+  // Convert Gemini history format ({ role: 'user'|'model', parts: [{ text }] })
+  // to OpenAI format ({ role: 'user'|'assistant', content: string })
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history.map((h) => ({
+      role: h.role === 'model' ? 'assistant' : 'user',
+      content: h.parts[0].text,
+    })),
+    { role: 'user', content: message },
   ]
 
-  // Step 4: Call the Gemini 2.0 Flash generateContent endpoint.
-  // Configuration choices:
-  //   maxOutputTokens: 150  — enforces Viktor's 1-3 sentence constraint;
-  //                           also keeps ElevenLabs character usage low (free tier limit)
-  //   temperature: 0.9      — high enough to feel spontaneous and human, not robotic
-  //   system_instruction    — Viktor's persona, injected separately from the conversation
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': process.env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents,
-        generationConfig: { maxOutputTokens: 250, temperature: 0.9 },
-      }),
-    }
-  )
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      max_tokens: 250,
+      temperature: 0.9,
+    }),
+  })
 
-  // Step 5: Handle Gemini HTTP errors.
-  // 429 means the free-tier quota is exhausted — return a friendly message so the game
-  // doesn't silently break; any other non-OK status is surfaced as-is.
   if (!response.ok) {
     if (response.status === 429) {
       return res.status(429).json({ error: 'API quota exceeded. Try again later.' })
@@ -129,19 +124,8 @@ export default async function handler(req, res) {
     return res.status(response.status).json({ error: err })
   }
 
-  // Step 6: Extract Viktor's response text from Gemini's nested response structure.
-  // The path is: candidates[0].content.parts[0].text
-  // finishReason MAX_TOKENS means the response was cut off mid-sentence because it hit
-  // maxOutputTokens — append an ellipsis so the subtitle doesn't end abruptly.
-  // Any other unexpected shape falls back to a safe CALM non-answer so the game continues.
   const data = await response.json()
-  const candidate = data.candidates?.[0]
-  const rawText = candidate?.content?.parts?.[0]?.text
-  const wasTruncated = candidate?.finishReason === 'MAX_TOKENS'
-  const text = rawText
-    ? (wasTruncated ? rawText.trimEnd() + '...' : rawText)
-    : '[CALM] I have nothing to say.'
+  const text = data.choices?.[0]?.message?.content?.trim() || '[CALM] I have nothing to say.'
 
-  // Step 7: Return the raw text including the emotion tag — the frontend strips it
   res.json({ text })
 }
