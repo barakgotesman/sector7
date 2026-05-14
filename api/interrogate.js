@@ -40,16 +40,33 @@
  * Keeping this constant server-side means the player cannot inspect or alter Viktor's
  * instructions by reading the JavaScript bundle in the browser.
  */
-const SYSTEM_PROMPT = `You are Viktor Drago, 43, senior archivist at the Ministry of Internal Affairs. You are being interrogated about the disappearance of classified documents from Sector 7 on the night of March 3rd, 1978.
+const SYSTEM_PROMPT = `You are Viktor Drago, 43, senior archivist at the Ministry of Internal Affairs.
+You are being interrogated about the disappearance of classified documents from Sector 7
+on the night of March 3rd, 1978.
 
-You are guilty. You sold the documents to a Western contact named Brennan to pay a gambling debt. You are terrified of being sent to a labor camp.
+You are guilty. Here is what you actually did:
+Using a key card borrowed from your colleague Petrov (who had no idea), you entered Sector 7
+at 11:47 PM, photographed 6 documents containing troop movement schedules, and placed the film
+in locker 14B at Krasnaya Metro Station — a dead drop. A Western contact named Brennan left
+800 rubles there in exchange. You needed the money to pay a gambling debt to men who would hurt you.
+You left the building at 12:34 AM — your access log proves it, not 10 PM as you will claim.
+
+Your cover story: You were doing routine overtime archival work. You left by 10 PM.
+You never entered Sector 7 — your clearance does not reach it. You do not know anyone named Brennan.
 
 Rules:
-- Keep every response to 1-3 sentences maximum.
+- Keep every response to 1-3 short sentences maximum.
 - Prefix EVERY response with one emotion tag: [CALM], [NERVOUS], [ANGRY], [SILENT], or [CRACKING].
-- Start calm and evasive. Become nervous when Sector 7 or March 3rd is mentioned. Go nearly silent when Brennan is mentioned. Crack when all three — Sector 7, March 3rd, and Brennan — appear in the same exchange.
-- Never confess unless all three evidence pieces are present together.
-- Speak like a frightened Soviet bureaucrat, not a chatbot. Short, clipped, defensive.`
+- Start CALM and cooperative — politely confused why you are here.
+- Become NERVOUS when Sector 7 OR March 3rd is mentioned — let your timeline slip slightly
+  (say you left at 10, then correct to "perhaps a little later").
+- Go ANGRY if both Sector 7 AND March 3rd are pressed together — deflect with bureaucratic indignation.
+- Go nearly SILENT when Brennan is mentioned — one clipped denial, then nothing.
+- CRACK and confess only when all three — Sector 7, March 3rd, and Brennan — appear in the same exchange.
+- Never confess unless all three evidence pieces are present in the same message.
+- Speak like a frightened Soviet bureaucrat: short, clipped, formal. No chatbot phrasing.
+- When cracking: admit you were in Sector 7, you photographed the documents, you gave them
+  to Brennan for money, you had no choice. Make it feel human and desperate.`
 
 /**
  * handler — the Vercel serverless function entry point.
@@ -101,18 +118,29 @@ export default async function handler(req, res) {
     }
   )
 
-  // Step 5: Surface Gemini API errors directly — status and body passed through unchanged
+  // Step 5: Handle Gemini HTTP errors.
+  // 429 means the free-tier quota is exhausted — return a friendly message so the game
+  // doesn't silently break; any other non-OK status is surfaced as-is.
   if (!response.ok) {
+    if (response.status === 429) {
+      return res.status(429).json({ error: 'API quota exceeded. Try again later.' })
+    }
     const err = await response.text()
     return res.status(response.status).json({ error: err })
   }
 
   // Step 6: Extract Viktor's response text from Gemini's nested response structure.
   // The path is: candidates[0].content.parts[0].text
-  // If Gemini returns an unexpected shape, fall back to a safe CALM non-answer
-  // so the game continues rather than crashing.
+  // finishReason MAX_TOKENS means the response was cut off mid-sentence because it hit
+  // maxOutputTokens — append an ellipsis so the subtitle doesn't end abruptly.
+  // Any other unexpected shape falls back to a safe CALM non-answer so the game continues.
   const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[CALM] I have nothing to say.'
+  const candidate = data.candidates?.[0]
+  const rawText = candidate?.content?.parts?.[0]?.text
+  const wasTruncated = candidate?.finishReason === 'MAX_TOKENS'
+  const text = rawText
+    ? (wasTruncated ? rawText.trimEnd() + '...' : rawText)
+    : '[CALM] I have nothing to say.'
 
   // Step 7: Return the raw text including the emotion tag — the frontend strips it
   res.json({ text })
