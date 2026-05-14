@@ -24,7 +24,7 @@ const states = {
     glow: false, // no bloom when waiting — silence is the default
   },
   listening: {
-    label: 'RECORDING',
+    label: 'CLICK TO STOP',
     buttonClass: 'bg-primary-container border-primary-container', // soviet red — active
     iconClass: 'text-on-primary-container',
     glow: true,  // pulsing red bloom radiates outward — player knows they are being heard
@@ -92,7 +92,7 @@ export default function MicButton({ micState = 'idle', onClick }) {
         */}
         <motion.button
           onClick={onClick}
-          disabled={micState === 'processing'} // lock out during API calls and speaking
+          disabled={micState === 'processing'} // lock out during API calls and speaking — listening stays clickable so user can stop
           whileTap={{ scale: 0.93 }}
           className={`w-20 h-20 border-4 flex items-center justify-center transition-all shadow-[0_0_20px_rgba(0,0,0,0.8)] z-10 disabled:opacity-50 disabled:cursor-not-allowed ${s.buttonClass}`}
         >

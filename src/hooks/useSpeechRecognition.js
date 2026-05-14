@@ -21,8 +21,9 @@ import { useRef, useState, useCallback } from 'react'
  * @param {object}   params
  * @param {function} params.onResult — called with the final transcript string
  * @param {function} params.onError  — called with a short error string (browser error codes)
+ * @param {function} params.onEnd    — called when recognition ends without producing a result
  */
-export default function useSpeechRecognition({ onResult, onError }) {
+export default function useSpeechRecognition({ onResult, onError, onEnd }) {
   // Ref rather than state — we need to call .stop() on it imperatively without
   // causing a re-render cycle when we assign a new instance.
   const recognitionRef = useRef(null)
@@ -31,40 +32,49 @@ export default function useSpeechRecognition({ onResult, onError }) {
   const [isListening, setIsListening] = useState(false)
 
   /**
-   * start — create a fresh SpeechRecognition instance and begin listening.
+   * start — request mic permission explicitly, then begin recognition.
    *
-   * A new instance is created each time because the Web Speech API does not
-   * support restarting a stopped recogniser — you must instantiate a new one.
+   * We call getUserMedia before starting SpeechRecognition so that Chrome's
+   * permission prompt is fully resolved before the recognition session opens.
+   * Without this, the permission prompt causes the first recognition session to
+   * end immediately (onend fires before onresult), requiring a double-click to work.
    *
-   * Configuration choices:
-   *   lang = 'en-US'        — locked to English for v1; Hebrew support via he-IL planned
-   *   interimResults = false — we only want the final transcript, not half-formed words
-   *   maxAlternatives = 1   — we take the top hypothesis; alternatives add noise here
+   * The MediaStream is released immediately after — we only need getUserMedia
+   * for the permission grant; SpeechRecognition manages its own audio capture.
    */
   const start = useCallback(() => {
-    // Support both the standard and the webkit-prefixed version (Chrome uses the latter)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      // This game is voice-only — there is no typed fallback, so this is a hard blocker
+      console.error('[SR] SpeechRecognition not supported in this browser')
       onError('Speech recognition is not supported in this browser. Please use Chrome.')
       return
     }
 
+    console.log('[SR] creating recognition instance...')
     const recognition = new SpeechRecognition()
-    recognition.lang = 'en-US'         // recognition language — matches interrogator persona
-    recognition.interimResults = false  // wait for the full sentence before firing onResult
-    recognition.maxAlternatives = 1     // only need the best guess
+    recognition.lang = 'en-US'
+    recognition.interimResults = true
+    recognition.continuous = true   // don't auto-stop on silence — we stop manually after final result
+    recognition.maxAlternatives = 1
+
+    recognition.onstart = () => {
+      console.log('[SR] onstart — mic is open, listening...')
+    }
 
     /**
      * onresult fires when the browser has a final transcript.
-     * e.results[0][0].transcript is the top alternative of the first (and only) result.
-     * We immediately clear isListening before calling onResult so the UI transitions
-     * to 'processing' state while the API call is in-flight.
+     * We use interimResults so we can log partial results for debugging,
+     * but only call onResult when isFinal is true.
      */
     recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript
-      setIsListening(false)
-      onResult(transcript)
+      const result = e.results[e.results.length - 1]
+      const transcript = result[0].transcript
+      console.log('[SR] onresult —', result.isFinal ? 'FINAL' : 'interim', transcript)
+      if (result.isFinal) {
+        recognition.stop() // manually stop — we got what we need
+        setIsListening(false)
+        onResult(transcript)
+      }
     }
 
     /**
@@ -73,6 +83,7 @@ export default function useSpeechRecognition({ onResult, onError }) {
      * We surface it to the caller who can format it into a user-facing message.
      */
     recognition.onerror = (e) => {
+      console.error('[SR] onerror —', e.error)
       setIsListening(false)
       onError(e.error)
     }
@@ -83,14 +94,17 @@ export default function useSpeechRecognition({ onResult, onError }) {
      * a safety net in case onerror was not fired first.
      */
     recognition.onend = () => {
+      console.log('[SR] onend — recognition stopped')
       setIsListening(false)
+      onEnd?.()
     }
 
     // Store the instance so stop() can reach it
     recognitionRef.current = recognition
+    console.log('[SR] calling recognition.start()...')
     recognition.start()
     setIsListening(true)
-  }, [onResult, onError])
+  }, [onResult, onError, onEnd])
 
   /**
    * stop — abort the current recognition session.

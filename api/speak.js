@@ -33,7 +33,7 @@
  * hardcoded here as a constant so the function does not depend on an env var for a
  * value that should never change between environments.
  */
-const VOICE_ID = 'OPl534sov4A0jA4MY2k2'
+const VOICE_ID = 'pNInz6obpgDQGcFmaJgB'
 
 /**
  * The ElevenLabs model used for synthesis.

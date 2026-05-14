@@ -21,7 +21,7 @@ export default function useInterrogation() {
     phase, setPhase,
     emotion, setEmotion,
     evidence, surfaceEvidence,
-    messages, addMessage,
+    messages, addMessage, updateLastMessage,
     history,
     isUnlocked,
   } = useGameState()
@@ -50,12 +50,20 @@ export default function useInterrogation() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history }),
       })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        if (res.status === 429) throw new Error('API quota exceeded. Try again in a moment.')
+        if (res.status === 503) throw new Error('Server unavailable. Restart vercel dev.')
+        throw new Error(err.error || `Interrogation failed (${res.status}).`)
+      }
+
       const data = await res.json()
       const raw = data.text || ''
 
       const match = raw.match(EMOTION_REGEX)
       const detectedEmotion = match ? match[1] : 'CALM'
-      const responseText = raw.replace(EMOTION_REGEX, '').trim()
+      const responseText = raw.replace(EMOTION_REGEX, '').trim() || '...'
 
       setEmotion(detectedEmotion)
 
@@ -67,31 +75,56 @@ export default function useInterrogation() {
       if (/brennan/i.test(text + responseText)) keys.push('brennan')
       if (keys.length) surfaceEvidence(keys)
 
-      addMessage('suspect', responseText)
-      setPhase('speaking')
-
+      // Fetch audio before showing text — eliminates the gap between subtitle and voice
       const speakRes = await fetch('/api/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: responseText }),
       })
-      const audioBuffer = await speakRes.arrayBuffer()
-      await playSuspectAudio(audioBuffer) // awaited so mic re-enables only after Viktor finishes speaking
+
+      // Show Viktor's text even if TTS fails — the interrogation continues without audio
+      addMessage('suspect', '')
+      setPhase('speaking')
+
+      let i = 0
+      const typeInterval = setInterval(() => {
+        i++
+        updateLastMessage(responseText.slice(0, i))
+        if (i >= responseText.length) clearInterval(typeInterval)
+      }, 35)
+
+      if (speakRes.ok) {
+        const audioBuffer = await speakRes.arrayBuffer()
+        await playSuspectAudio(audioBuffer)
+      } else {
+        // TTS failed — text is already showing, just skip audio silently
+        console.warn('[SPEAK] TTS failed:', speakRes.status)
+      }
 
     } catch (err) {
-      setError('Connection error. Check API configuration.')
+      setError(err.message || 'Connection error.')
     } finally {
       // always return to idle — ensures the mic is never permanently locked on API failure
       setPhase('idle')
     }
-  }, [history, addMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
+  }, [history, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
 
-  const { isListening, start: startListening } = useSpeechRecognition({
+  const { isListening, start: startListening, stop: stopListening } = useSpeechRecognition({
     onResult: handleTranscript,
-    onError: (e) => setError(`Mic error: ${e}`),
+    onError: (e) => { setError(`Mic error: ${e}`); setPhase('idle') },
+    // onEnd fires when recognition stops without a result — reset phase so mic re-enables
+    onEnd: () => setPhase((p) => p === 'listening' ? 'idle' : p),
   })
 
   const handleMicClick = useCallback(() => {
+    console.log('[MIC] clicked — current phase:', phase)
+
+    // Second click while recording — stop and let onresult/onend send the transcript
+    if (phase === 'listening') {
+      stopListening()
+      return
+    }
+
     if (phase !== 'idle') return
 
     if (!started) {
@@ -103,7 +136,7 @@ export default function useInterrogation() {
     playMicClick()
     setPhase('listening')
     startListening()
-  }, [phase, started, startAmbient, playMicClick, setPhase, startListening])
+  }, [phase, started, startAmbient, playMicClick, setPhase, startListening, stopListening])
 
   const micState = isListening
     ? 'listening'

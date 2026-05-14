@@ -106,14 +106,14 @@ export default async function handler(req, res) {
   //   temperature: 0.9      — high enough to feel spontaneous and human, not robotic
   //   system_instruction    — Viktor's persona, injected separately from the conversation
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': process.env.GEMINI_API_KEY },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents,
-        generationConfig: { maxOutputTokens: 150, temperature: 0.9 },
+        generationConfig: { maxOutputTokens: 250, temperature: 0.9 },
       }),
     }
   )

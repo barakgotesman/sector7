@@ -75,6 +75,21 @@ export default function useGameState() {
   }, [])
 
   /**
+   * updateLastMessage — replace the text of the most recently added message in-place.
+   * Used by the typewriter effect to progressively reveal Viktor's response one
+   * character at a time without adding new message entries.
+   * History is NOT updated here — it was already set with the full text in addMessage.
+   */
+  const updateLastMessage = useCallback((text) => {
+    setMessages((prev) => {
+      if (!prev.length) return prev
+      const updated = [...prev]
+      updated[updated.length - 1] = { ...updated[updated.length - 1], text }
+      return updated
+    })
+  }, [])
+
+  /**
    * surfaceEvidence — mark one or more evidence keys as discovered.
    *
    * Called from App.jsx after each Gemini round-trip when keyword matching
@@ -111,7 +126,7 @@ export default function useGameState() {
     phase, setPhase,
     emotion, setEmotion,
     evidence, surfaceEvidence,
-    messages, addMessage,
+    messages, addMessage, updateLastMessage,
     history,          // sent to /api/interrogate on every turn
     isUnlocked,       // gates the Accusation Panel
     collectedEvidence,
