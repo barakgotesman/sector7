@@ -79,8 +79,8 @@ export default function useInterrogation() {
       if (/brennan/i.test(text + responseText)) keys.push('brennan')
       if (keys.length) surfaceEvidence(keys)
 
-      // Kick off TTS fetch without blocking — typewriter and audio start together
-      const audioPromise = fetch('/api/speak', {
+      // Fetch audio while thinking dots are still showing — wait until buffer is ready
+      const audioBuffer = await fetch('/api/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: responseText }),
@@ -88,6 +88,7 @@ export default function useInterrogation() {
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
         .catch((err) => { console.warn('[SPEAK] TTS failed:', err); return null })
 
+      // Audio is ready — start typewriter and playback at the exact same moment
       setPhase('speaking')
 
       let i = 0
@@ -97,8 +98,8 @@ export default function useInterrogation() {
         if (i >= responseText.length) clearInterval(typeInterval)
       }, 35)
 
-      const audioBuffer = await audioPromise
       if (audioBuffer) await playSuspectAudio(audioBuffer)
+      else clearInterval(typeInterval)
 
     } catch (err) {
       setError((err as Error).message || 'Connection error.')
