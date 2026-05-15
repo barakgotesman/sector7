@@ -6,6 +6,7 @@ import InputBar from './components/InputBar'
 import DossierDrawer from './components/DossierDrawer'
 import AccusationPanel from './components/AccusationPanel'
 import useInterrogation from './hooks/useInterrogation'
+import DevPanel from './components/DevPanel'
 
 export default function App() {
   const [dossierOpen, setDossierOpen] = useState(false)
@@ -22,6 +23,7 @@ export default function App() {
     setPhase,
     handleSubmit,
     onMicStart,
+    testEmotion,
   } = useInterrogation()
 
   return (
@@ -110,6 +112,8 @@ export default function App() {
           </div>
         </footer>
       </div>
+
+      <DevPanel onEmotionTest={testEmotion} />
 
       <DossierDrawer
         isOpen={dossierOpen}

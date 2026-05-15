@@ -8,4 +8,4 @@ export const EMOTIONS: Record<Emotion, Emotion> = {
   CRACKING: 'CRACKING',
 }
 
-export const EMOTION_REGEX = /^\[(CALM|NERVOUS|ANGRY|SILENT|CRACKING)\]/
+export const EMOTION_REGEX = /\[(CALM|NERVOUS|ANGRY|SILENT|CRACKING)\]/g

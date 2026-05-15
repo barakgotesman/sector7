@@ -55,8 +55,9 @@ export default function useInterrogation() {
     }
 
     setPhase('processing')
-    addMessage('interrogator', text.trim())
-    addMessage('suspect', '', Date.now(), true)
+    const msgId = Date.now()
+    addMessage('interrogator', text.trim(), msgId)
+    addMessage('suspect', '', msgId + 1, true)
 
     try {
       const res = await fetch('/api/interrogate', {
@@ -75,9 +76,11 @@ export default function useInterrogation() {
       const data = await res.json() as { text?: string }
       const raw = data.text ?? ''
 
-      const match = raw.match(EMOTION_REGEX)
+      const match = EMOTION_REGEX.exec(raw)
       const detectedEmotion: Emotion = (match ? match[1] : 'CALM') as Emotion
+      EMOTION_REGEX.lastIndex = 0
       const responseText = raw.replace(EMOTION_REGEX, '').trim() || '...'
+      EMOTION_REGEX.lastIndex = 0
 
       setEmotion(detectedEmotion)
 
@@ -121,6 +124,13 @@ export default function useInterrogation() {
     playMicClick()
   }, [playMicClick])
 
+  const testEmotion = useCallback((emotion: Emotion, det: string, subj: string) => {
+    setEmotion(emotion)
+    const msgId = Date.now()
+    addMessage('interrogator', det, msgId)
+    addMessage('suspect', subj, msgId + 1)
+  }, [setEmotion, addMessage])
+
   return {
     emotion,
     messages,
@@ -132,5 +142,6 @@ export default function useInterrogation() {
     setPhase,
     handleSubmit,
     onMicStart,
+    testEmotion,
   }
 }
