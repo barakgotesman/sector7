@@ -27,7 +27,6 @@ export default function useInterrogation() {
     evidence, surfaceEvidence,
     messages, addMessage, updateLastMessage,
     history,
-    isUnlocked,
   } = useGameState()
 
   const collectedEvidence = Object.entries(evidence)
@@ -112,11 +111,17 @@ export default function useInterrogation() {
       if (audioBuffer) await playSuspectAudio(audioBuffer)
       else clearInterval(typeInterval)
 
+      if (detectedEmotion === 'CRACKING') {
+        setPhase('victory')
+        processingRef.current = false
+        return
+      }
+
     } catch (err) {
       setError((err as Error).message || 'Connection error.')
     } finally {
       processingRef.current = false
-      setPhase('idle')
+      setPhase((prev) => prev === 'victory' ? 'victory' : 'idle')
     }
   }, [started, startAmbient, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
 
@@ -135,11 +140,9 @@ export default function useInterrogation() {
     emotion,
     messages,
     error,
-    isUnlocked,
     collectedEvidence,
     sessionTime: formatTime(sessionSeconds),
     phase,
-    setPhase,
     handleSubmit,
     onMicStart,
     testEmotion,

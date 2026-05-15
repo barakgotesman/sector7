@@ -171,7 +171,7 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
             onClick={handleChatSubmit}
             disabled={isDisabled || !draft.trim()}
             whileTap={{ scale: 0.93 }}
-            className="h-full px-4 py-3 border-2 border-primary-container bg-primary-container/10 hover:bg-primary-container text-primary-container hover:text-on-primary-container transition-all font-label-bold tracking-widest uppercase text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-full px-4 py-3 border border-surface-variant bg-transparent hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-all font-label-bold tracking-widest uppercase text-xs disabled:opacity-30 disabled:cursor-not-allowed"
           >
             SEND
           </motion.button>
