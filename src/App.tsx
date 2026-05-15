@@ -11,6 +11,7 @@ import DevPanel from './components/DevPanel'
 export default function App() {
   const [dossierOpen, setDossierOpen] = useState(false)
   const [showIntro, setShowIntro] = useState(true)
+  const [seenEvidenceCount, setSeenEvidenceCount] = useState(0)
 
   const {
     emotion,
@@ -41,7 +42,7 @@ export default function App() {
       <div className="absolute bottom-32 left-12 w-32 h-32 border-l border-b border-surface-variant/30 pointer-events-none z-[110]" />
       <div className="absolute bottom-32 right-12 w-32 h-32 border-r border-b border-surface-variant/30 pointer-events-none z-[110]" />
 
-      <aside className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 opacity-40 hover:opacity-100 transition-opacity z-[110] pointer-events-none">
+      <aside className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 opacity-40 hover:opacity-100 transition-opacity z-[102] pointer-events-none">
         <div className="font-label-sm text-label-sm vertical-rl rotate-180 flex gap-4 text-on-surface-variant">
           <span>COORD: 55.7558 N, 37.6173 E</span>
           <span>LEVEL: SUB-LEVEL 09</span>
@@ -49,7 +50,7 @@ export default function App() {
         </div>
       </aside>
 
-      <aside className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 opacity-40 hover:opacity-100 transition-opacity z-[110] pointer-events-none">
+      <aside className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 opacity-40 hover:opacity-100 transition-opacity z-[102] pointer-events-none">
         <div className="font-label-sm text-label-sm vertical-rl flex gap-4 text-on-surface-variant">
           <span>HEARTBEAT: 114 BPM</span>
           <span>STRESS: CRITICAL</span>
@@ -73,14 +74,28 @@ export default function App() {
         <footer className="relative z-[110] p-gutter flex justify-between items-end border-t-2 border-surface-variant bg-surface-container-low/90">
 
           <div className="flex flex-col gap-2 items-center">
-            <button
-              onClick={() => setDossierOpen((o) => !o)}
-              className="w-16 h-16 flex items-center justify-center border-2 border-surface-variant hover:bg-surface-variant transition-all group"
-            >
-              <span className="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-on-surface">
-                folder
-              </span>
-            </button>
+            {(() => {
+              const hasNew = collectedEvidence.length > seenEvidenceCount
+              return (
+                <div className="relative">
+                  {hasNew && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full z-10 animate-pulse" />
+                  )}
+                  <button
+                    onClick={() => { setDossierOpen((o) => !o); setSeenEvidenceCount(collectedEvidence.length) }}
+                    className={`w-16 h-16 flex items-center justify-center border-2 transition-all group ${
+                      hasNew
+                        ? 'border-primary animate-pulse shadow-[0_0_12px_rgba(204,34,0,0.6)]'
+                        : 'border-surface-variant hover:bg-surface-variant'
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-4xl ${hasNew ? 'text-primary' : 'text-on-surface-variant group-hover:text-on-surface'}`}>
+                      folder
+                    </span>
+                  </button>
+                </div>
+              )
+            })()}
             <span className="font-label-bold text-label-sm text-on-surface-variant tracking-widest uppercase">
               DOSSIER
             </span>

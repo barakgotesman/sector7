@@ -1,6 +1,6 @@
 export default function TopOverlay() {
   return (
-    <header className="flex items-start p-gutter z-[110] relative">
+    <header className="flex items-start p-gutter z-[102] relative">
       <div className="flex flex-col">
         <span className="font-label-bold text-label-bold text-primary tracking-[0.2em]">
           MINISTRY OF INTERNAL AFFAIRS
@@ -39,7 +39,7 @@ export function SessionTimer({ secondsRemaining }: SessionTimerProps) {
   const timeStr = formatTime(secondsRemaining)
 
   return (
-    <div className="absolute top-0 right-0 p-gutter z-40 flex flex-col items-end">
+    <div className="absolute top-0 right-0 p-gutter z-[102] flex flex-col items-end">
       <div className={`bg-surface-container px-3 py-1 border flex items-center gap-2 ${
         isCritical ? 'border-red-500' : isWarning ? 'border-red-700' : 'border-surface-variant'
       }`}>
