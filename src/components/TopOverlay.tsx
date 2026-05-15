@@ -19,10 +19,13 @@ export default function TopOverlay() {
   )
 }
 
+const TOTAL_SECONDS = 300
+
 function formatTime(seconds: number): string {
-  const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0')
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')
   const s = String(seconds % 60).padStart(2, '0')
-  return `${m}:${s}`
+  return `${h}:${m}:${s}`
 }
 
 interface SessionTimerProps {
@@ -30,8 +33,9 @@ interface SessionTimerProps {
 }
 
 export function SessionTimer({ secondsRemaining }: SessionTimerProps) {
-  const isWarning = secondsRemaining <= 60
-  const isCritical = secondsRemaining <= 30
+  const timeLeft = TOTAL_SECONDS - secondsRemaining
+  const isWarning = timeLeft <= 60
+  const isCritical = timeLeft <= 30
   const timeStr = formatTime(secondsRemaining)
 
   return (
@@ -43,7 +47,7 @@ export function SessionTimer({ secondsRemaining }: SessionTimerProps) {
         <span className={`font-label-bold text-label-bold ${
           isCritical ? 'animate-pulse text-red-400' : isWarning ? 'text-red-500' : 'text-on-surface'
         }`}>
-          {secondsRemaining === 0 ? 'TIME EXPIRED' : `SESSION ${timeStr}`}
+          SESSION {timeStr}
         </span>
       </div>
       <span className={`font-label-sm text-label-sm mt-2 ${

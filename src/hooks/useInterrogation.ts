@@ -8,13 +8,14 @@ import type { Emotion, EvidenceKey, HistoryEntry } from '../types'
 const TOTAL_SECONDS = 300
 
 function formatTime(seconds: number): string {
-  const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0')
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')
   const s = String(seconds % 60).padStart(2, '0')
-  return `${m}:${s}`
+  return `${h}:${m}:${s}`
 }
 
 export default function useInterrogation() {
-  const [sessionSeconds, setSessionSeconds] = useState(TOTAL_SECONDS)
+  const [sessionSeconds, setSessionSeconds] = useState(0)
   const [started, setStarted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Ref-based guard so double-calls in the same tick are rejected reliably
@@ -42,8 +43,8 @@ export default function useInterrogation() {
     if (!started) return
     const interval = setInterval(() => {
       setSessionSeconds((s) => {
-        if (s <= 1) { setPhase('lose'); clearInterval(interval); return 0 }
-        return s - 1
+        if (s + 1 >= TOTAL_SECONDS) { setPhase('lose'); clearInterval(interval); return TOTAL_SECONDS }
+        return s + 1
       })
     }, 1000)
     return () => clearInterval(interval)
