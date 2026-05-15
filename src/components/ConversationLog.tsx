@@ -21,10 +21,11 @@ interface Props {
 }
 
 export default function ConversationLog({ messages }: Props) {
+  // 3 on mobile, 4 on desktop — controlled by max-h capping overflow either way
   const visible = messages.slice(-4)
 
   return (
-    <div className="relative z-40 px-12 pb-4 flex flex-col items-center gap-3 overflow-hidden">
+    <div className="relative z-40 px-3 sm:px-12 pb-2 sm:pb-4 flex flex-col items-center gap-2 sm:gap-3 max-h-[35vh] sm:max-h-[45vh] overflow-hidden">
       <AnimatePresence initial={false}>
         {visible.map((msg, i) => {
           const age = visible.length - 1 - i
@@ -38,11 +39,11 @@ export default function ConversationLog({ messages }: Props) {
               animate={{ opacity, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
-              className={`bg-surface-container-lowest/80 backdrop-blur-md px-6 py-3 max-w-2xl w-full border-l-4 ${
+              className={`bg-surface-container-lowest/80 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-3 max-w-2xl w-full border-l-4 ${
                 isInterrogator ? 'border-primary-container' : 'border-cctv-green'
               }`}
             >
-              <p className="font-body-lg text-body-lg text-on-surface/80">
+              <p className="text-xs sm:text-body-lg text-on-surface/80 leading-snug">
                 <span
                   className={`font-label-bold mr-2 uppercase ${
                     isInterrogator ? 'text-primary-container' : 'text-cctv-green'

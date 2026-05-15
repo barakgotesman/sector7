@@ -80,7 +80,7 @@ export default function App() {
         </div>
       )}
 
-      <div className="flex flex-col flex-shrink-0">
+      <div className="flex flex-col flex-shrink-0 min-h-0">
         <ConversationLog messages={messages} />
 
         <footer className="relative z-[110] px-2 sm:px-4 py-2 sm:py-3 flex items-end gap-1 sm:gap-2 border-t-2 border-surface-variant bg-surface-container-low/90" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
