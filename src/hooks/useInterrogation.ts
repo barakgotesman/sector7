@@ -48,6 +48,7 @@ export default function useInterrogation() {
 
     setPhase('processing')
     addMessage('interrogator', text.trim())
+    addMessage('suspect', '', Date.now(), true)
 
     try {
       const res = await fetch('/api/interrogate', {
@@ -84,7 +85,6 @@ export default function useInterrogation() {
         body: JSON.stringify({ text: responseText }),
       })
 
-      addMessage('suspect', '')
       setPhase('speaking')
 
       let i = 0

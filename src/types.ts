@@ -8,6 +8,7 @@ export interface Message {
   id: number
   role: MessageRole
   text: string
+  thinking?: boolean
 }
 
 export type EvidenceKey = 'sector7' | 'march3' | 'brennan'

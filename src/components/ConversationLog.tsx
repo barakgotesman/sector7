@@ -1,6 +1,21 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Message } from '../types'
 
+function ThinkingDots() {
+  return (
+    <span className="inline-flex items-center gap-[5px]">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="inline-block w-[5px] h-[5px] bg-cctv-green rounded-full"
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+        />
+      ))}
+    </span>
+  )
+}
+
 interface Props {
   messages: Message[]
 }
@@ -35,7 +50,7 @@ export default function ConversationLog({ messages }: Props) {
                 >
                   {isInterrogator ? 'DET. ►' : 'SUBJ. ▌'}
                 </span>
-                {msg.text}
+                {msg.thinking ? <ThinkingDots /> : msg.text}
               </p>
             </motion.div>
           )

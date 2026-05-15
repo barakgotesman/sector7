@@ -14,19 +14,22 @@ export default function useGameState() {
   const [messages, setMessages] = useState<Message[]>([])
   const [history, setHistory] = useState<HistoryEntry[]>([])
 
-  const addMessage = useCallback((role: MessageRole, text: string, id = Date.now()) => {
-    setMessages((prev) => [...prev, { id, role, text }])
-    setHistory((prev) => [
-      ...prev,
-      { role: role === 'interrogator' ? 'user' : 'model', parts: [{ text }] },
-    ])
+  const addMessage = useCallback((role: MessageRole, text: string, id = Date.now(), thinking = false) => {
+    setMessages((prev) => [...prev, { id, role, text, thinking }])
+    // Don't push thinking placeholders into the Groq history
+    if (!thinking) {
+      setHistory((prev) => [
+        ...prev,
+        { role: role === 'interrogator' ? 'user' : 'model', parts: [{ text }] },
+      ])
+    }
   }, [])
 
   const updateLastMessage = useCallback((text: string) => {
     setMessages((prev) => {
       if (!prev.length) return prev
       const updated = [...prev]
-      updated[updated.length - 1] = { ...updated[updated.length - 1], text }
+      updated[updated.length - 1] = { ...updated[updated.length - 1], text, thinking: false }
       return updated
     })
   }, [])
