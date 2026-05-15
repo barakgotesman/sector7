@@ -5,15 +5,16 @@ import { EMOTION_REGEX } from '../constants/emotions'
 import { EVIDENCE_LABELS } from '../constants/gameConfig'
 import type { Emotion, EvidenceKey, HistoryEntry } from '../types'
 
+const TOTAL_SECONDS = 300
+
 function formatTime(seconds: number): string {
-  const h = String(Math.floor(seconds / 3600)).padStart(2, '0')
-  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0')
   const s = String(seconds % 60).padStart(2, '0')
-  return `${h}:${m}:${s}`
+  return `${m}:${s}`
 }
 
 export default function useInterrogation() {
-  const [sessionSeconds, setSessionSeconds] = useState(0)
+  const [sessionSeconds, setSessionSeconds] = useState(TOTAL_SECONDS)
   const [started, setStarted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Ref-based guard so double-calls in the same tick are rejected reliably
@@ -39,19 +40,24 @@ export default function useInterrogation() {
 
   useEffect(() => {
     if (!started) return
-    const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000)
+    const interval = setInterval(() => {
+      setSessionSeconds((s) => {
+        if (s <= 1) { setPhase('lose'); clearInterval(interval); return 0 }
+        return s - 1
+      })
+    }, 1000)
     return () => clearInterval(interval)
-  }, [started])
+  }, [started, setPhase])
+
+  const startSession = useCallback(() => {
+    setStarted(true)
+    startAmbient()
+  }, [startAmbient])
 
   const handleSubmit = useCallback(async (text: string) => {
-    if (!text?.trim() || processingRef.current) return
+    if (!text?.trim() || processingRef.current || !started) return
 
     processingRef.current = true
-
-    if (!started) {
-      setStarted(true)
-      startAmbient()
-    }
 
     setPhase('processing')
     const msgId = Date.now()
@@ -121,9 +127,9 @@ export default function useInterrogation() {
       setError((err as Error).message || 'Connection error.')
     } finally {
       processingRef.current = false
-      setPhase((prev) => prev === 'victory' ? 'victory' : 'idle')
+      setPhase((prev) => (prev === 'victory' || prev === 'lose') ? prev : 'idle')
     }
-  }, [started, startAmbient, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
+  }, [started, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
 
   const onMicStart = useCallback(() => {
     playMicClick()
@@ -141,10 +147,11 @@ export default function useInterrogation() {
     messages,
     error,
     collectedEvidence,
-    sessionTime: formatTime(sessionSeconds),
+    sessionSeconds,
     phase,
     handleSubmit,
     onMicStart,
     testEmotion,
+    startSession,
   }
 }

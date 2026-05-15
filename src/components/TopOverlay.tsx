@@ -19,21 +19,37 @@ export default function TopOverlay() {
   )
 }
 
-interface SessionTimerProps {
-  sessionTime: string
+function formatTime(seconds: number): string {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const s = String(seconds % 60).padStart(2, '0')
+  return `${m}:${s}`
 }
 
-export function SessionTimer({ sessionTime }: SessionTimerProps) {
+interface SessionTimerProps {
+  secondsRemaining: number
+}
+
+export function SessionTimer({ secondsRemaining }: SessionTimerProps) {
+  const isWarning = secondsRemaining <= 60
+  const isCritical = secondsRemaining <= 30
+  const timeStr = formatTime(secondsRemaining)
+
   return (
     <div className="absolute top-0 right-0 p-gutter z-40 flex flex-col items-end">
-      <div className="bg-surface-container px-3 py-1 border border-surface-variant flex items-center gap-2">
-        <span className="w-2 h-2 bg-primary-container animate-pulse" />
-        <span className="font-label-bold text-label-bold text-on-surface">
-          SESSION {sessionTime}
+      <div className={`bg-surface-container px-3 py-1 border flex items-center gap-2 ${
+        isCritical ? 'border-red-500' : isWarning ? 'border-red-700' : 'border-surface-variant'
+      }`}>
+        <span className={`w-2 h-2 animate-pulse ${isWarning ? 'bg-red-500' : 'bg-primary-container'}`} />
+        <span className={`font-label-bold text-label-bold ${
+          isCritical ? 'animate-pulse text-red-400' : isWarning ? 'text-red-500' : 'text-on-surface'
+        }`}>
+          {secondsRemaining === 0 ? 'TIME EXPIRED' : `SESSION ${timeStr}`}
         </span>
       </div>
-      <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-        UPLINK: ACTIVE
+      <span className={`font-label-sm text-label-sm mt-2 ${
+        isCritical ? 'text-red-500 animate-pulse' : 'text-on-surface-variant'
+      }`}>
+        {isCritical ? 'TIME CRITICAL' : 'UPLINK: ACTIVE'}
       </span>
     </div>
   )

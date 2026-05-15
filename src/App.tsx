@@ -4,23 +4,31 @@ import Silhouette from './components/Silhouette'
 import ConversationLog from './components/ConversationLog'
 import InputBar from './components/InputBar'
 import DossierDrawer from './components/DossierDrawer'
+import IntroScreen from './components/IntroScreen'
 import useInterrogation from './hooks/useInterrogation'
 import DevPanel from './components/DevPanel'
 
 export default function App() {
   const [dossierOpen, setDossierOpen] = useState(false)
+  const [showIntro, setShowIntro] = useState(true)
 
   const {
     emotion,
     messages,
     error,
     collectedEvidence,
-    sessionTime,
+    sessionSeconds,
     phase,
     handleSubmit,
     onMicStart,
     testEmotion,
+    startSession,
   } = useInterrogation()
+
+  function handleBegin() {
+    setShowIntro(false)
+    startSession()
+  }
 
   return (
     <div className="relative h-screen w-screen overflow-hidden flex flex-col justify-between bg-background text-on-surface select-none">
@@ -50,7 +58,7 @@ export default function App() {
       </aside>
 
       <TopOverlay />
-      <SessionTimer sessionTime={sessionTime} />
+      <SessionTimer secondsRemaining={sessionSeconds} />
       <Silhouette emotion={emotion} />
 
       {error && (
@@ -91,6 +99,28 @@ export default function App() {
         onClose={() => setDossierOpen(false)}
         evidence={collectedEvidence}
       />
+
+      {showIntro && <IntroScreen onBegin={handleBegin} />}
+
+      {phase === 'lose' && (
+        <div className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center gap-8">
+          <div className="font-label-bold text-label-sm tracking-[0.5em] text-red-500 uppercase">
+            ACCESS TERMINATED — FILE 1978/03/SECTOR-7
+          </div>
+          <div className="font-display text-display-lg text-red-400 text-center max-w-xl leading-tight">
+            TIME EXPIRED
+          </div>
+          <div className="w-24 h-px bg-red-900" />
+          <div className="font-body text-body-md text-on-surface-variant text-center max-w-sm leading-relaxed">
+            Director Morozov has assumed control of the interrogation.<br />
+            Your access to Sector 7 has been revoked.<br />
+            Viktor Drago remains in custody. Case unresolved.
+          </div>
+          <div className="font-label-bold text-label-sm tracking-widest text-red-900 uppercase mt-8">
+            ██████ OPERATION FAILED ██████
+          </div>
+        </div>
+      )}
 
       {phase === 'victory' && (
         <div className="absolute inset-0 z-[100] bg-black flex flex-col items-center justify-center gap-8">

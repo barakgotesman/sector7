@@ -1,6 +1,6 @@
 export type Emotion = 'CALM' | 'NERVOUS' | 'ANGRY' | 'SILENT' | 'CRACKING'
 
-export type Phase = 'idle' | 'listening' | 'processing' | 'speaking' | 'victory'
+export type Phase = 'idle' | 'listening' | 'processing' | 'speaking' | 'victory' | 'lose'
 
 export type MessageRole = 'interrogator' | 'suspect'
 
