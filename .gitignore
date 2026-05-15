@@ -33,3 +33,4 @@ CLAUDE.md
 stitch_*.html
 
 .vercel
+.env*.local

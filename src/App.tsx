@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import TopOverlay from './components/TopOverlay'
 import Silhouette from './components/Silhouette'
 import ConversationLog from './components/ConversationLog'
-import MicButton from './components/MicButton'
+import InputBar from './components/InputBar'
 import DossierDrawer from './components/DossierDrawer'
 import AccusationPanel from './components/AccusationPanel'
 import useInterrogation from './hooks/useInterrogation'
@@ -13,7 +13,6 @@ export default function App() {
 
   const {
     emotion,
-    micState,
     messages,
     error,
     isUnlocked,
@@ -21,7 +20,8 @@ export default function App() {
     sessionTime,
     phase,
     setPhase,
-    handleMicClick,
+    handleSubmit,
+    onMicStart,
   } = useInterrogation()
 
   return (
@@ -79,7 +79,7 @@ export default function App() {
             </span>
           </div>
 
-          <MicButton micState={micState} onClick={handleMicClick} />
+          <InputBar phase={phase} onSubmit={handleSubmit} onMicStart={onMicStart} />
 
           <div className="flex flex-col gap-2 items-center">
             <button
