@@ -24,7 +24,7 @@ export default function ConversationLog({ messages }: Props) {
   const visible = messages.slice(-4)
 
   return (
-    <div className="relative z-40 px-12 pb-32 flex flex-col items-center gap-3">
+    <div className="relative z-40 px-12 pb-4 flex flex-col items-center gap-3 overflow-hidden">
       <AnimatePresence initial={false}>
         {visible.map((msg, i) => {
           const age = visible.length - 1 - i

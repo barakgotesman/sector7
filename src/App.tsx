@@ -60,7 +60,7 @@ export default function App() {
         </div>
       )}
 
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-shrink-0">
         <ConversationLog messages={messages} />
 
         <footer className="relative z-50 p-gutter flex justify-between items-end border-t-2 border-surface-variant bg-surface-container-low/90">

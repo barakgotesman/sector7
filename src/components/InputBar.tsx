@@ -84,6 +84,9 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
 
   const isDisabled = phase === 'processing' || phase === 'speaking'
   const transcriptRef = useRef('')
+  // Stable ref so the isListening effect doesn't re-run on every onSubmit identity change
+  const onSubmitRef = useRef(onSubmit)
+  useEffect(() => { onSubmitRef.current = onSubmit }, [onSubmit])
 
   const { isListening, transcript, start, stop } = useAppSpeechRecognition({
     onResult: onSubmit,
@@ -94,10 +97,10 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
 
   useEffect(() => {
     if (!isListening && transcriptRef.current.trim()) {
-      onSubmit(transcriptRef.current.trim())
+      onSubmitRef.current(transcriptRef.current.trim())
       transcriptRef.current = ''
     }
-  }, [isListening, onSubmit])
+  }, [isListening])
 
   const micState: MicState = isListening ? 'listening' : isDisabled ? 'processing' : 'idle'
 

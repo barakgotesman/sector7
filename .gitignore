@@ -28,6 +28,7 @@ Thumbs.db
 # Claude
 CLAUDE.md
 .claude/
+docs/npc-emotion-test.md
 
 # Stitch reference files
 stitch_*.html

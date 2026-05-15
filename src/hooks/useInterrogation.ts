@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import useGameState from './useGameState'
 import useAudio from './useAudio'
 import { EMOTION_REGEX } from '../constants/emotions'
 import { EVIDENCE_LABELS } from '../constants/gameConfig'
-import type { Emotion, EvidenceKey } from '../types'
+import type { Emotion, EvidenceKey, HistoryEntry } from '../types'
 
 function formatTime(seconds: number): string {
   const h = String(Math.floor(seconds / 3600)).padStart(2, '0')
@@ -16,6 +16,10 @@ export default function useInterrogation() {
   const [sessionSeconds, setSessionSeconds] = useState(0)
   const [started, setStarted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Ref-based guard so double-calls in the same tick are rejected reliably
+  const processingRef = useRef(false)
+  // Ref mirror of history so handleSubmit doesn't need history in its deps
+  const historyRef = useRef<HistoryEntry[]>([])
 
   const {
     phase, setPhase,
@@ -32,6 +36,8 @@ export default function useInterrogation() {
 
   const { startAmbient, playMicClick, playSuspectAudio } = useAudio()
 
+  useEffect(() => { historyRef.current = history }, [history])
+
   useEffect(() => {
     if (!started) return
     const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000)
@@ -39,7 +45,9 @@ export default function useInterrogation() {
   }, [started])
 
   const handleSubmit = useCallback(async (text: string) => {
-    if (!text?.trim() || phase !== 'idle') return
+    if (!text?.trim() || processingRef.current) return
+
+    processingRef.current = true
 
     if (!started) {
       setStarted(true)
@@ -54,7 +62,7 @@ export default function useInterrogation() {
       const res = await fetch('/api/interrogate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text.trim(), history }),
+        body: JSON.stringify({ message: text.trim(), history: historyRef.current }),
       })
 
       if (!res.ok) {
@@ -104,9 +112,10 @@ export default function useInterrogation() {
     } catch (err) {
       setError((err as Error).message || 'Connection error.')
     } finally {
+      processingRef.current = false
       setPhase('idle')
     }
-  }, [history, phase, started, startAmbient, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
+  }, [started, startAmbient, addMessage, updateLastMessage, setPhase, setEmotion, surfaceEvidence, playSuspectAudio])
 
   const onMicStart = useCallback(() => {
     playMicClick()

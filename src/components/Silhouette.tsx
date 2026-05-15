@@ -42,6 +42,14 @@ const emotionTransitions: Partial<Record<Emotion, Transition>> = {
   CRACKING: { duration: 0.25, repeat: Infinity, repeatType: 'mirror' },
 }
 
+const emotionImages: Record<Emotion, string> = {
+  CALM:     '/calm.jpg',
+  NERVOUS:  '/nervous.jpg',
+  ANGRY:    '/angry.jpg',
+  SILENT:   '/silent.jpg',
+  CRACKING: '/cracking.jpg',
+}
+
 interface Props {
   emotion?: Emotion
 }
@@ -49,12 +57,13 @@ interface Props {
 export default function Silhouette({ emotion = 'CALM' }: Props) {
   const variant = emotionVariants[emotion] ?? emotionVariants.CALM
   const transition = emotionTransitions[emotion] ?? { duration: 0.6, ease: 'easeInOut' }
+  const src = emotionImages[emotion] ?? emotionImages.CALM
 
   return (
     <div className="absolute inset-0 pointer-events-none">
       <motion.img
         alt="Suspect"
-        src="/suspect.jpg"
+        src={src}
         className="absolute inset-0 w-full h-full object-cover object-center"
         animate={variant}
         transition={transition}
