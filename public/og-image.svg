@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <pattern id="scanlines" width="1200" height="4" patternUnits="userSpaceOnUse">
+      <rect width="1200" height="2" fill="#000" opacity="0.3"/>
+    </pattern>
+    <pattern id="grain" width="200" height="200" patternUnits="userSpaceOnUse">
+      <filter id="noise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
+      </filter>
+      <rect width="200" height="200" filter="url(#noise)" opacity="0.08"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a3a1a" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0d0d0a"/>
+  <rect width="1200" height="630" fill="url(#grain)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Border frame -->
+  <rect x="32" y="32" width="1136" height="566" fill="none" stroke="#1a2a1a" stroke-width="1.5"/>
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#1a2a1a" stroke-width="0.5"/>
+
+  <!-- Corner brackets -->
+  <line x1="32" y1="80" x2="72" y2="80" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="72" y1="32" x2="72" y2="72" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="1168" y1="80" x2="1128" y2="80" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="1128" y1="32" x2="1128" y2="72" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="32" y1="550" x2="72" y2="550" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="72" y1="598" x2="72" y2="558" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="1168" y1="550" x2="1128" y2="550" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+  <line x1="1128" y1="598" x2="1128" y2="558" stroke="#4ade80" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Ministry label -->
+  <text x="600" y="110" font-family="monospace" font-size="16" fill="#4ade80" text-anchor="middle" letter-spacing="8" opacity="0.7">MINISTRY OF INTERNAL AFFAIRS</text>
+
+  <!-- SECTOR 7 title -->
+  <text x="600" y="310" font-family="monospace" font-size="160" font-weight="bold" fill="#e7e2d7" text-anchor="middle" letter-spacing="-4" opacity="0.95">SECTOR 7</text>
+
+  <!-- Divider -->
+  <line x1="200" y1="360" x2="1000" y2="360" stroke="#2a2a2a" stroke-width="1"/>
+
+  <!-- Subtitle -->
+  <text x="600" y="420" font-family="monospace" font-size="22" fill="#4ade80" text-anchor="middle" letter-spacing="6" opacity="0.8">INTERROGATION — CASE #4471-B</text>
+
+  <!-- Description -->
+  <text x="600" y="490" font-family="monospace" font-size="16" fill="#6b6b5a" text-anchor="middle" letter-spacing="3">A VOICE-DRIVEN COLD WAR INTERROGATION GAME</text>
+
+  <!-- Classified stamp -->
+  <g transform="translate(900, 160) rotate(-15)">
+    <rect x="-90" y="-28" width="180" height="52" fill="none" stroke="#cc2200" stroke-width="3" opacity="0.85"/>
+    <text x="0" y="12" font-family="monospace" font-size="28" font-weight="bold" fill="#cc2200" text-anchor="middle" letter-spacing="4" opacity="0.85">CLASSIFIED</text>
+  </g>
+
+  <!-- Camera tag -->
+  <text x="60" y="590" font-family="monospace" font-size="12" fill="#2a3a2a" letter-spacing="3">CAM 9-C // ACTIVE</text>
+  <text x="1140" y="590" font-family="monospace" font-size="12" fill="#2a3a2a" letter-spacing="3" text-anchor="end">1978/03/SECTOR-7</text>
+
+  <!-- Scanlines overlay -->
+  <rect width="1200" height="630" fill="url(#scanlines)"/>
+</svg>
