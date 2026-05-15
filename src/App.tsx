@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import useAudio from './hooks/useAudio'
 import TopOverlay, { SessionTimer } from './components/TopOverlay'
 import Silhouette from './components/Silhouette'
 import ConversationLog from './components/ConversationLog'
@@ -12,6 +13,16 @@ export default function App() {
   const [dossierOpen, setDossierOpen] = useState(false)
   const [showIntro, setShowIntro] = useState(true)
   const [seenEvidenceCount, setSeenEvidenceCount] = useState(0)
+  const [volume, setVolume] = useState(0.5)
+  const [volumeOpen, setVolumeOpen] = useState(false)
+
+  const { startSoundtrack, toggleSoundtrack, setSoundtrackVolume, isSoundtrackPlaying } = useAudio()
+
+  function handleVolumeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = parseFloat(e.target.value)
+    setVolume(v)
+    setSoundtrackVolume(v)
+  }
 
   const {
     emotion,
@@ -29,6 +40,7 @@ export default function App() {
   function handleBegin() {
     setShowIntro(false)
     startSession()
+    startSoundtrack()
   }
 
   return (
@@ -37,10 +49,10 @@ export default function App() {
       <div className="scanline-overlay" />
       <div className="grain-texture" />
 
-      <div className="absolute top-24 left-12 w-32 h-32 border-l border-t border-surface-variant/30 pointer-events-none z-[110]" />
-      <div className="absolute top-24 right-12 w-32 h-32 border-r border-t border-surface-variant/30 pointer-events-none z-[110]" />
-      <div className="absolute bottom-32 left-12 w-32 h-32 border-l border-b border-surface-variant/30 pointer-events-none z-[110]" />
-      <div className="absolute bottom-32 right-12 w-32 h-32 border-r border-b border-surface-variant/30 pointer-events-none z-[110]" />
+      <div className="absolute top-24 left-12 w-32 h-32 border-l border-t border-surface-variant/30 pointer-events-none z-[103]" />
+      <div className="absolute top-24 right-12 w-32 h-32 border-r border-t border-surface-variant/30 pointer-events-none z-[103]" />
+      <div className="absolute bottom-32 left-12 w-32 h-32 border-l border-b border-surface-variant/30 pointer-events-none z-[103]" />
+      <div className="absolute bottom-32 right-12 w-32 h-32 border-r border-b border-surface-variant/30 pointer-events-none z-[103]" />
 
       <aside className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 opacity-40 hover:opacity-100 transition-opacity z-[102] pointer-events-none">
         <div className="font-label-sm text-label-sm vertical-rl rotate-180 flex gap-4 text-on-surface-variant">
@@ -71,9 +83,9 @@ export default function App() {
       <div className="flex flex-col flex-shrink-0">
         <ConversationLog messages={messages} />
 
-        <footer className="relative z-[110] p-gutter flex justify-between items-end border-t-2 border-surface-variant bg-surface-container-low/90">
+        <footer className="relative z-[110] px-4 py-3 flex items-end gap-2 border-t-2 border-surface-variant bg-surface-container-low/90">
 
-          <div className="flex flex-col gap-2 items-center">
+          <div className="flex flex-col gap-2 items-center shrink-0">
             {(() => {
               const hasNew = collectedEvidence.length > seenEvidenceCount
               return (
@@ -86,10 +98,12 @@ export default function App() {
                     className={`w-16 h-16 flex items-center justify-center border-2 transition-all group ${
                       hasNew
                         ? 'border-primary animate-pulse shadow-[0_0_12px_rgba(204,34,0,0.6)]'
+                        : dossierOpen
+                        ? 'border-surface-variant bg-surface-variant'
                         : 'border-surface-variant hover:bg-surface-variant'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-4xl ${hasNew ? 'text-primary' : 'text-on-surface-variant group-hover:text-on-surface'}`}>
+                    <span className={`material-symbols-outlined text-4xl ${hasNew ? 'text-primary' : dossierOpen ? 'text-on-surface' : 'text-on-surface-variant group-hover:text-on-surface'}`}>
                       folder
                     </span>
                   </button>
@@ -103,7 +117,55 @@ export default function App() {
 
           <InputBar phase={phase} onSubmit={handleSubmit} onMicStart={onMicStart} />
 
-          <div className="w-16" />
+          <div className="flex flex-col gap-2 items-center relative shrink-0">
+            {volumeOpen && (
+              <div className="absolute bottom-full mb-3 flex flex-col items-center gap-2 pb-1 bg-surface-container-low/90 border border-surface-variant px-3 py-3">
+                <span className="font-label-bold text-label-sm text-on-surface-variant tracking-widest tabular-nums">
+                  {Math.round(volume * 100)}
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  className="cursor-pointer"
+                  style={{ writingMode: 'vertical-lr', direction: 'rtl', width: '4px', height: '80px', accentColor: '#4ade80' }}
+                />
+                <button
+                  onClick={toggleSoundtrack}
+                  className="text-on-surface-variant hover:text-on-surface transition-colors mt-1 text-xs tracking-widest"
+                >
+                  {isSoundtrackPlaying ? '⏸' : '▶'}
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setVolumeOpen((o) => !o)}
+              className="w-16 h-16 flex items-center justify-center border-2 border-surface-variant hover:bg-surface-variant transition-all group"
+              aria-label="Toggle music / volume"
+            >
+              <svg className="w-7 h-7 text-on-surface-variant group-hover:text-on-surface transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                {isSoundtrackPlaying ? (
+                  <>
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </>
+                ) : (
+                  <>
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <line x1="23" y1="9" x2="17" y2="15" />
+                    <line x1="17" y1="9" x2="23" y2="15" />
+                  </>
+                )}
+              </svg>
+            </button>
+            <span className="font-label-bold text-label-sm text-on-surface-variant tracking-widest uppercase">
+              SOUND
+            </span>
+          </div>
         </footer>
       </div>
 

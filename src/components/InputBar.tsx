@@ -134,7 +134,7 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
   }, [mode])
 
   return (
-    <div className="flex flex-col items-center gap-3 mb-4">
+    <div className="flex flex-col items-center gap-3 mb-4 flex-1 min-w-0 px-2">
       {isChrome && (
         <div className="flex border border-surface-variant text-xs font-label-bold tracking-widest">
           {(['chat', 'speak'] as const).map((m) => (
@@ -155,7 +155,7 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
       )}
 
       {mode === 'chat' || !isChrome ? (
-        <div className="flex items-end gap-2 w-[420px] max-w-[90vw]">
+        <div className="flex items-end gap-2 w-full max-w-[480px]">
           <textarea
             ref={textareaRef}
             rows={2}
