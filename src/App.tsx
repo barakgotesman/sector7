@@ -119,6 +119,12 @@ export default function App() {
           <div className="font-label-bold text-label-sm tracking-widest text-red-900 uppercase mt-8">
             ██████ OPERATION FAILED ██████
           </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="border border-red-900 px-10 py-3 font-label-bold text-label-bold tracking-[0.3em] uppercase text-red-700 hover:bg-red-950 transition-all duration-200 mt-4"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
