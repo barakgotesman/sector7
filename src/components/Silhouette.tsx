@@ -2,39 +2,24 @@ import { motion } from 'framer-motion'
 import type { TargetAndTransition, Transition } from 'framer-motion'
 import type { Emotion } from '../types'
 
-const BASE = 'grayscale(100%) brightness(0.55) contrast(1.4) sepia(1) hue-rotate(80deg)'
+const BASE = 'grayscale(100%) brightness(0.75) contrast(1.4) sepia(1) hue-rotate(80deg)'
 
+// transform/opacity only — base filter is static on wrapper, glow is a separate overlay
 const emotionVariants: Record<Emotion, TargetAndTransition> = {
-  CALM: {
-    x: 0,
-    scale: 1,
-    opacity: 0.9,
-    filter: `${BASE} drop-shadow(0 0 12px rgba(26,58,26,0.8))`,
-  },
-  NERVOUS: {
-    x: [-2, 2, -1, 1, 0],
-    scale: 1,
-    opacity: 0.9,
-    filter: `${BASE} drop-shadow(0 0 16px rgba(26,58,26,0.9))`,
-  },
-  ANGRY: {
-    x: 0,
-    scale: 1.03,
-    opacity: 1,
-    filter: `${BASE} drop-shadow(0 0 24px rgba(26,58,26,1))`,
-  },
-  SILENT: {
-    x: -8,
-    scale: 0.98,
-    opacity: 0.45,
-    filter: `${BASE} drop-shadow(0 0 6px rgba(26,58,26,0.3))`,
-  },
-  CRACKING: {
-    x: [-4, 4, -3, 3, -2, 2, 0],
-    scale: 1,
-    opacity: [1, 0.6, 1, 0.5, 1, 0.7, 1],
-    filter: `${BASE} drop-shadow(0 0 28px rgba(26,58,26,1))`,
-  },
+  CALM:     { x: 0,                          scale: 1,    opacity: 0.9 },
+  NERVOUS:  { x: [-2, 2, -1, 1, 0],          scale: 1,    opacity: 0.9 },
+  ANGRY:    { x: 0,                          scale: 1.03, opacity: 1   },
+  SILENT:   { x: -8,                         scale: 0.98, opacity: 0.45 },
+  CRACKING: { x: [-4, 4, -3, 3, -2, 2, 0],  scale: 1,    opacity: [1, 0.6, 1, 0.5, 1, 0.7, 1] },
+}
+
+// Glow intensity per emotion — rendered as a separate div so the base image filter stays static
+const emotionGlow: Record<Emotion, string> = {
+  CALM:     'rgba(26,58,26,0.8)',
+  NERVOUS:  'rgba(26,58,26,0.9)',
+  ANGRY:    'rgba(26,80,26,1)',
+  SILENT:   'rgba(26,58,26,0.3)',
+  CRACKING: 'rgba(26,100,26,1)',
 }
 
 const emotionTransitions: Partial<Record<Emotion, Transition>> = {
@@ -59,12 +44,16 @@ export default function Silhouette({ emotion = 'CALM' }: Props) {
   const transition = emotionTransitions[emotion] ?? { duration: 0.6, ease: 'easeInOut' }
   const src = emotionImages[emotion] ?? emotionImages.CALM
 
+  const glow = emotionGlow[emotion] ?? emotionGlow.CALM
+
   return (
     <div className="absolute inset-0 pointer-events-none">
+      {/* Filter is static on the img — not in Framer Motion's animate prop, so no per-frame repaint */}
       <motion.img
         alt="Suspect"
         src={src}
         className="absolute inset-0 w-full h-full object-cover object-center"
+        style={{ filter: `${BASE} drop-shadow(0 0 40px ${glow})` }}
         animate={variant}
         transition={transition}
       />

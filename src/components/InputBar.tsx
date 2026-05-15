@@ -44,10 +44,10 @@ function MicFace({ micState }: { micState: MicState }) {
           type="button"
           disabled={micState === 'processing'}
           whileTap={{ scale: 0.93 }}
-          className={`w-20 h-20 border-4 flex items-center justify-center transition-all shadow-[0_0_20px_rgba(0,0,0,0.8)] z-10 disabled:opacity-50 disabled:cursor-not-allowed ${s.buttonClass}`}
+          className={`w-14 h-14 sm:w-20 sm:h-20 border-4 flex items-center justify-center transition-all shadow-[0_0_20px_rgba(0,0,0,0.8)] z-10 disabled:opacity-50 disabled:cursor-not-allowed ${s.buttonClass}`}
         >
           <span
-            className={`material-symbols-outlined text-4xl ${s.iconClass}`}
+            className={`material-symbols-outlined text-2xl sm:text-4xl ${s.iconClass}`}
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             mic
@@ -134,7 +134,7 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
   }, [mode])
 
   return (
-    <div className="flex flex-col items-center gap-3 mb-4 flex-1 min-w-0 px-2">
+    <div className="flex flex-col items-center gap-2 sm:gap-3 mb-1 sm:mb-4 flex-1 min-w-0 px-1 sm:px-2">
       {isChrome && (
         <div className="flex border border-surface-variant text-xs font-label-bold tracking-widest">
           {(['chat', 'speak'] as const).map((m) => (
@@ -164,7 +164,7 @@ export default function InputBar({ phase, onSubmit, onMicStart }: Props) {
             onKeyDown={handleKeyDown}
             disabled={isDisabled}
             placeholder="Type your question..."
-            className="flex-1 resize-none bg-surface-container border border-surface-variant text-on-surface font-label-sm text-label-sm px-3 py-2 placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 resize-none bg-surface-container border border-surface-variant text-on-surface font-label-sm text-xs sm:text-label-sm px-2 sm:px-3 py-1 sm:py-2 placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary disabled:opacity-40 disabled:cursor-not-allowed"
           />
           <motion.button
             type="button"

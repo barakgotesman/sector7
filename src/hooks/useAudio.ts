@@ -1,42 +1,29 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+
+// Module-level singletons — shared across every useAudio() call so only one Audio object
+// ever exists per sound, regardless of how many components call this hook.
+let ambientAudio: HTMLAudioElement | null = null
+let soundtrackAudio: HTMLAudioElement | null = null
+
+function getSoundtrack(): HTMLAudioElement {
+  if (!soundtrackAudio) {
+    soundtrackAudio = new Audio('/sounds/Black Ice Protocol .mp3')
+    soundtrackAudio.loop = true
+    soundtrackAudio.volume = 0.5
+  }
+  return soundtrackAudio
+}
 
 export default function useAudio() {
-  const ambientRef = useRef<HTMLAudioElement | null>(null)
-  const soundtrackRef = useRef<HTMLAudioElement | null>(null)
   const [isSoundtrackPlaying, setIsSoundtrackPlaying] = useState(false)
 
-  useEffect(() => {
-    ambientRef.current = new Audio('/sounds/ambient.mp3')
-    ambientRef.current.loop = true
-    ambientRef.current.volume = 0.4
-
-    const soundtrack = new Audio('/sounds/Black Ice Protocol.mp3')
-    soundtrack.loop = true
-    soundtrack.volume = 0.5
-    soundtrackRef.current = soundtrack
-
-    return () => {
-      ambientRef.current?.pause()
-      soundtrack.pause()
-    }
-  }, [])
-
-  const startAmbient = useCallback(() => {
-    ambientRef.current?.play().catch(() => {})
-  }, [])
-
-  const stopAmbient = useCallback(() => {
-    ambientRef.current?.pause()
-  }, [])
-
   const startSoundtrack = useCallback(() => {
-    soundtrackRef.current?.play().catch(() => {})
+    getSoundtrack().play().catch(() => {})
     setIsSoundtrackPlaying(true)
   }, [])
 
   const toggleSoundtrack = useCallback(() => {
-    const s = soundtrackRef.current
-    if (!s) return
+    const s = getSoundtrack()
     if (s.paused) {
       s.play().catch(() => {})
       setIsSoundtrackPlaying(true)
@@ -47,7 +34,7 @@ export default function useAudio() {
   }, [])
 
   const setSoundtrackVolume = useCallback((v: number) => {
-    if (soundtrackRef.current) soundtrackRef.current.volume = v
+    getSoundtrack().volume = v
   }, [])
 
   const playMicClick = useCallback(() => {
@@ -70,8 +57,6 @@ export default function useAudio() {
   }, [])
 
   return {
-    startAmbient,
-    stopAmbient,
     startSoundtrack,
     toggleSoundtrack,
     setSoundtrackVolume,
